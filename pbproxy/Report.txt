@@ -1,0 +1,54 @@
+a) Test Environment 
+	Ubuntu 16.04.3 LTS
+	Linux 4.10.0-37-generic x86_64
+
+b) Compiler and its version
+
+	gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.4) 
+
+c) Command Line commands and options	
+
+	1) To run ssh 
+	pbproxy [-l port] -k keyfile destination port
+
+	Example:
+	At server side:
+		./pbproxy -l 4030 -k mykey localhost 22
+
+	At client side:
+		ssh -o "ProxyCommand ./pbproxy -k mykey localhost 4030" localhost
+
+	2) To run pbproxy for exchange of messages to another server other than ssh
+		Make sure you have another server file created, wherein that server can read as well as write to the clients.
+		Let's call it the destination server, "dserver" listening on port "dport"
+
+	Example:
+		1) At destinations server side
+			Just run the server listening on port dport.
+			./server 
+
+		2) run pbproxy
+			./pbproxy -l 4030 -k mykey localhost dport
+
+		3) run client
+			./pbproxy -k mykey localhost 4030
+
+	Thus the messages can be exchanges between the client and the destination server, via pbproxy.
+	
+d) Design
+	
+	At a time, either the client or the proxy server can run, and this is decided based on the presence of the l option.
+	The	code flow is as follows:
+	1. The client accepts the input from the STDIN , encrypts it using AES encryption in CTR mode and then forwards it to the proxy server.
+	2. The proxy server, after receiving the encrypted message from the client, decrypts the message and forwards it to the destination
+		server.
+	3. The destination server responds and sends the response to the proxy server
+	4. The proxy server receives the message from the destination server, encrypts it and sends it to the client.
+	5. The client , after receiving the encrypted message from the proxy server, decrypts it and print it on STDOUT.
+
+	ssh <--stdin/stdout--> pbproxy-c <--socket 1--> pbproxy-s <--socket 2--> sshd
+ 	\______________________________/                \___________________________/
+             client                                        server           
+
+e) References
+https://stackoverflow.com/questions/27495370/aes-ctr-symmetric-encryption-and-decryption
